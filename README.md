@@ -20,7 +20,11 @@ Data used for the VBQ analysis
     - GM-smoothed A (like PD), MT, R1 and R2* maps
     - WM-smoothed A (like PD), MT, R1 and R2* maps
 - mutually exclusive binary masks for GM and WM tissues
-- 4 regressors with values for subject's age, gender, TIV & scanner site
+- 4 regressors with values for subject's age, gender, TIV & scanner 
+    - age is expressed in years;
+    - gender is 1 for 'male', 0 for 'female';
+    - TIV (total intracranial volume) is expressed in liters;
+    - scanner is 0 for 'quatro' and 1 for 'trio' but also encoded in the filename with `MQ` (for 'quatro') or `MT` (for 'trio'), with 3 subjects using lower case labels `mq`/`mt`.
 
 Data used for the VBM analysis
 - smoothed modulated normalized GM maps from the 138 subjects
@@ -115,3 +119,37 @@ AgingData/derivatives/SPM12dartel/
       sub-S123_R2starmap_space-MNI_desc-GMsmo.nii
       sub-S123_R2starmap_space-MNI_desc-WMsmo.nii
 ````
+
+---
+
+## Original processed data organization 
+
+The original processed data  are organized like this, on my HD from the top folder with path `C:\Dox\2_Data\qMRI_MPM\Data4ChrisPhilips`:
+
+- a `.mat` file (`Subjects4Chris.mat`) with ID & regressors (age, TIV, scanner, gender);
+- two mask files, `WinnerTakesAllMask_GM.nii` and `WinnerTakesAllMask_WM.nii`, for the GM and WM, resolution `[1 1 1]`mm^3;
+- the `Average_MTsat_Maps` folder with 3 average MT images
+  - `Averaged_MT_HeadMask.nii`, average across all subjects of whole warped MTmap images, resolution `[1 1 1]`mm^3,  masked including some non-brain tissues;
+  - `AveragedMT_MNI_BrainMask.nii`, average across all subjects of whole warped MTmap images, resolution `[1 1 1]`mm^3,  masked tight around the brain (but not matching the GM/WM masks!);
+  - `AveragedMTMap_DARTEL.nii`, average across all subjects of whole warped MTmap images, resolution `[1.5 1.5 1.5]`mm^3, no masking;
+- the `Fin_dart_p1` folder, with GM-weighted warped maps used for the statistical analysis
+  - 3 files `fin_dart_p1MQ0190_R1.nii`, `fin_dart_p1MQ0190_R2s.nii` &  `fin_dart_p1MQ0190_A.nii` with the averaged across all subjects of the `R1`, `R2s` & `A` GM-weighted warped maps;
+  - 4 folders `Imgs_A`, `Imgs_MT`, `Imgs_R1 ` & `Imgs_R2s` with all the subjects `A`, `MT` `R1` & `R2s` GM-weighted warped maps
+  - each of the 4 `A`, `MT` `R1` & `R2s` folders contains files of the form `fin_dart_p1MT02253_MT.nii` where
+    - `MT02253` encodes for the subjects index, `02253`, and scanner label, `MT` (other scanner would be `MQ`);
+    - `_MT` for MTsat images, there are thus corresponding images with the `A`, `R1` & `R2s` suffixes.
+- the same for the `Fin_dart_p2` folder, with WM-weighted warped maps used for the statistical analysis
+
+
+
+
+
+
+
+
+
+
+````
+dsfg
+````
+
