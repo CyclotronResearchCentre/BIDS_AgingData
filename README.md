@@ -34,10 +34,9 @@ Data used for the VBM analysis
 Then for display purpose a mean MT image but other mean images (R1) are possible.
 
 ***Questions***
-- What about the smooth modulated warp GM density maps, used for the VBM analysis? 
-- Should be included as they are part of the original paper?
-
-CP: we do not have these at the CRC.
+- What about the smooth modulated warp GM density maps, used for the VBM analysis? :arrow_forward: it would be nice for the sake of completeness.
+- Should be included as they are part of the original paper? :arrow_forward: CP: we do not have these at the CRC.
+- Should we randomize the subjects order and ensuing BIDS-labels? :arrow_forward: yes, it does not cost much in doing so and improves anonymization (though not perfect...)
 
 ### Previous preprocessing steps
 
