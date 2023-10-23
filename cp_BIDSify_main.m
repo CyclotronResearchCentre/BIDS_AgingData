@@ -50,9 +50,54 @@ Nsubj = numel(Subjects4Chris.ID);
 
 % Randomization of subjects
 SubjPerm = randperm(Nsubj);
-% write out the table with original keys
 
-% Create the participants.tsv file
+% Create all arrays with participants informations
+participant_id = cell(Nsubj,1);
+participant_orig = cell(Nsubj,1);
+age = cell(Nsubj,1);
+sex = cell(Nsubj,1);
+TIV = cell(Nsubj,1);
+scanner = cell(Nsubj,1);
+for isub = 1:Nsubj
+    participant_id{isub} = sprintf('S%03d',isub);
+    participant_orig{isub} = Subjects4Chris.ID{SubjPerm(isub)} ;
+    age{isub} = Subjects4Chris.Age(SubjPerm(isub));
+    if Subjects4Chris.Gender(SubjPerm(isub))
+        sex{isub} = 'M';
+    else
+        sex{isub} = 'F';
+    end
+    TIV{isub} = Subjects4Chris.TIV{SubjPerm(isub)};
+    if Subjects4Chris.Trio(SubjPerm(isub))
+        scanner{isub} = 'trio';
+    else
+        scanner{isub} = 'quatro';
+    end
+end
+% write out the table with original id keys
+fn_IdKeys = fullfile(pth_out,'IdKeys.tsv');
+spm_save(fn_IdKeys,table(participant_id,participant_orig))
+
+% write out the participants.tsv/.json files
+fn_participants_tsv = fullfile(pth_out,'participants.tsv');
+spm_save(fn_participants_tsv,table(participant_id,age,sex,TIV,scanner))
+
+fn_participants_json = spm_file(fn_participants_tsv,'ext','json');
+participants_json = struct( ...
+    'age' , struct( ...
+        'Description', 'age of the participant', ...
+        'Units', 'years'), ...
+    'sex', struct( ...
+        'Description', 'sex of the participant', ...
+        'Levels', struct('M', 'male', 'F', 'female') ), ...
+    'TIV', struct( ...
+        'Description', 'total intracranial volume', ...
+        'Units', 'liters'), ...
+    'scanner', struct( ...
+        'Description', 'acquisition scanner', ...
+        'Levels', struct('quatro', 'quatro machine', 'trio', 'trio machine') ) ...
+    );
+spm_save(fn_participants_json, participants_json, 'indent', '\t')
 
 % 2. Arrange mean and mask images
 %================================
