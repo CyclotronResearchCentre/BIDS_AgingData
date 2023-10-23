@@ -38,11 +38,12 @@ if nargin<2
     pth_out = pth_dat;
 end
 if ~exist(pth_out,'dir'), mkdir(pth_out); end
+pth_deriv = fullfile(pth_out,'derivatives','SPM12dartel');
+if ~exist(pth_deriv,'dir'), mkdir(pth_deriv); end
 
 %% Deal with top level files
 % 1. Labels and regressors -> participants.tsv file
 %==================================================
-
 % Load labels and regressors
 fn_labels_regressors = fullfile(pth_dat,'Subjects4Chris.mat');
 load(fn_labels_regressors)
@@ -101,6 +102,38 @@ spm_save(fn_participants_json, participants_json, 'indent', '\t')
 
 % 2. Arrange mean and mask images
 %================================
+% Deal with mask images, in the top data folder, and name them
+% - atlas-GM_space-MNI_mask.nii/.json
+% - atlas-WM_space-MNI_mask.nii/.json
+fn_GMmask_orig = fullfile(pth_dat,'WinnerTakesAllMask_GM.nii');
+fn_GMmask = fullfile(pth_deriv,'atlas-GM_space-MNI_mask.nii');
+copyfile(fn_GMmask_orig,fn_GMmask)
+
+fn_WMmask_orig = fullfile(pth_dat,'WinnerTakesAllMask_WM.nii');
+fn_WMmask = fullfile(pth_deriv,'atlas-WM_space-MNI_mask.nii');
+copyfile(fn_WMmask_orig,fn_WMmask)
+
+fn_GMmask_json = spm_file(fn_GMmask,'ext','json');
+GMmask_json = struct( ...
+    'Name', 'Grey matter mask', ...
+    'Description', ['Voxel with higher probability, on average over the ' ...
+        'subjects in the study, to be grey matter than white matter ' ...
+        'or CSF and with a priori probability higher than .2 to be GM.'], ...
+    'DerivedFrom', 'Segmented GM, WM and CSF maps from all subjects', ...
+    'ReferencesAndLinks', 'https://doi.org/10.1016%2Fj.neurobiolaging.2014.02.008');
+spm_save(fn_GMmask_json, GMmask_json, 'indent', '\t')
+
+fn_WMmask_json = spm_file(fn_WMmask,'ext','json');
+WMmask_json = struct( ...
+    'Name', 'White matter mask', ...
+    'Description', ['Voxel with higher probability, on average over the ' ...
+        'subjects in the study, to be white matter than frey matter ' ...
+        'or CSF and with a priori probability higher than .2 to be GM.'], ...
+    'DerivedFrom', 'Segmented GM, WM and CSF maps from all subjects', ...
+    'ReferencesAndLinks', 'https://doi.org/10.1016%2Fj.neurobiolaging.2014.02.008');
+spm_save(fn_WMmask_json, WMmask_json, 'indent', '\t')
+
+% deal with averaged maps images, only some MTsat maps available...
 
 % 3. Add the top-level .JSON files
 %=================================
