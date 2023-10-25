@@ -212,20 +212,51 @@ spm_save(fn_meanMTsat_3_json, meanMTsat_3_json, 'indent', '\t')
 
 %% Deal with individual subjects data
 % 1. Define the path to all the images, 2 x 4 sets: [GM WM] x [A MTsat R1 R2*]
-imgTypes = {'A','MT','R1','R2s'};
+%    + the different types of maps & tissues
+imgTypes_orig = {'A','MT','R1','R2s'};
+imgTypes = {'PDmap','MTsat','R1map','R2starmap'}; % BIDS suffixes
+tissueTypes = {'GM', 'WM'};
 pth_qMRIs = cell(2,4);
-for ii=1:2
-    for jj=1:4
+for ii=1:2 % tissue types
+    for jj=1:4 % maps types
         pth_qMRIs{ii,jj} = fullfile(pth_dat, ...
-            sprintf('Fin_dart_p%d',ii),sprintf('Imgs_%s',imgTypes{jj}));
+            sprintf('Fin_dart_p%d',ii),sprintf('Imgs_%s',imgTypes_orig{jj}));
     end
 end
 
-for i_sub = 1:Nsubj
-    % Deal with each subject one by one
+% 2. Deal with each subject one by one
+for isub = 1:Nsubj
+    % Create subject's folders
+    pth_isub_anat = fullfile(pth_deriv,sprintf('sub-%s',participant_id{isub}),'anat');
+    if ~exist(pth_isub_anat,'dir'), mkdir(pth_isub_anat); end
     
+    % Deal with all 8 images
+    for ii=1:2
+        for jj=1:4
+            fn_isub_orig = fullfile(pth_qMRIs{ii,jj}, ...
+                sprintf('fin_dart_p%d%s_%s.nii',ii,participant_orig{isub},imgTypes_orig{jj}) );
+            fn_isub = fullfile(pth_isub_anat, ...
+                sprintf('sub-%s_%s_space-MNI_desc-%ssmo.nii', ...
+                    participant_id{isub}, ...
+                    imgTypes{jj}, ...
+                    tissueTypes{ii}) );
+            if ~exist(fn_isub_orig,'file')
+                fprintf('\nERROR. Could not find file :\n\t%s\n', fn_isub_orig);
+            else
+                copyfile(fn_isub_orig,fn_isub)
+            end
+        end
+    end
 end
 
+%% GZIP all the .nii files to save some space
+fn_nii = spm_select('FPListRec',pth_out,'^.*\.nii$');
+gzip(cellstr(fn_nii))
+
+for ii=1:size(fn_nii,1)
+    gzip(deblank(fn_nii(ii,:)))
+end
+    
 end
 %%
 
