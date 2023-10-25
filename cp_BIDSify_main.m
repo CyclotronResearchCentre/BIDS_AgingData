@@ -1,4 +1,4 @@
-function fn_out = cp_BIDSify_main(pth_dat,pth_out)
+function fn_out = cp_BIDSify_main(pth_dat,pth_out,opt)
 % Function to BIDSify the processed aging data from Callaghan et al. 2014
 % FORMAT
 %   fn_out = cp_BIDSify_main(pth_raw,pth_out)
@@ -6,14 +6,16 @@ function fn_out = cp_BIDSify_main(pth_dat,pth_out)
 % INPUT
 %   pth_dat : path to folder with all the data, see Readme
 %   pth_out : path where to write the BIDSified data, see Readme
+%   opt     : option structure flag
+%       .gzip : zip all the NIfTI files (1) or not (0, default)
 % 
 % OUTPUT
-%   fn_out : structure with full path file names
+%   fn_out : whole list of files in the BIDS folder
 % 
 % EXAMPLE
 %   pth_dat = 'C:\Dox\2_Data\qMRI_MPM\Data4ChrisPhilips'
 %   pth_out = 'C:\Dox\2_Data\qMRI_MPM\BIDS_AgingData'
-%   fn_out = cp_BIDSify_main(pth_raw,pth_out)
+%   fn_out = cp_BIDSify_main(pth_dat,pth_out)
 % 
 % REFERENCE
 % Callaghan et al. 2014, https://doi.org/10.1016/j.neurobiolaging.2014.02.008
@@ -32,11 +34,16 @@ function fn_out = cp_BIDSify_main(pth_dat,pth_out)
 
 %% Input check and defautl values
 if nargin==0
-    pth_dat = 'C:\Dox\2_Data\qMRI_MPM\Data4ChrisPhilips';
+    pth_dat = pwd;
 end
 if nargin<2
     pth_out = pth_dat;
 end
+if nargin<3
+    opt = struct('gzip', false);
+end
+
+% Deal with pathes for the BIDSified data
 if ~exist(pth_out,'dir'), mkdir(pth_out); end
 pth_deriv = fullfile(pth_out,'derivatives','SPM12dartel');
 if ~exist(pth_deriv,'dir'), mkdir(pth_deriv); end
@@ -250,13 +257,18 @@ for isub = 1:Nsubj
 end
 
 %% GZIP all the .nii files to save some space
-fn_nii = spm_select('FPListRec',pth_out,'^.*\.nii$');
-gzip(cellstr(fn_nii))
-
-for ii=1:size(fn_nii,1)
-    gzip(deblank(fn_nii(ii,:)))
+if opt.gzip
+    fn_nii = spm_select('FPListRec',pth_out,'^.*\.nii$');
+    for ii=1:size(fn_nii,1)
+        gzip(deblank(fn_nii(ii,:))); % Gzip in situ
+        delete(deblank(fn_nii(ii,:))); % Delete orginal .nii file
+    end
 end
+
+%% Collect output -> whole list of files in the BIDS folder
+fn_out = spm_select('FPListRec',pth_out,'.*');
     
 end
 %%
 
+% gzip(cellstr(fn_nii)) % -> puts all gzip file into top folder! :-(
