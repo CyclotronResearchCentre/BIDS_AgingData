@@ -27,6 +27,12 @@ function fn_out = cp_BIDSify_main(pth_dat,pth_out,opt)
 %       2. add the generic .json files
 %       3. gather mean and mask images
 % - then deal with the subjects images
+% 
+% STILL MISSING
+% - data licence 
+% - full description of how the data were spatially processed
+% - JSON file describing the tissue-weighted smoothed normalized 
+%   quantitative maps, globally for all the subjects.
 %_______________________________________________________________________
 % Copyright (C) 2023 Cyclotron Research Centre
 
