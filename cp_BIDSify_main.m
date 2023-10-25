@@ -15,7 +15,8 @@ function fn_out = cp_BIDSify_main(pth_dat,pth_out,opt)
 % EXAMPLE
 %   pth_dat = 'C:\Dox\2_Data\qMRI_MPM\Data4ChrisPhilips'
 %   pth_out = 'C:\Dox\2_Data\qMRI_MPM\BIDS_AgingData'
-%   fn_out = cp_BIDSify_main(pth_dat,pth_out)
+%   opt = struct('gzip', true) % -> gzip all .nii files at the end
+%   fn_out = cp_BIDSify_main(pth_dat,pth_out, opt)
 % 
 % REFERENCE
 % Callaghan et al. 2014, https://doi.org/10.1016/j.neurobiolaging.2014.02.008
