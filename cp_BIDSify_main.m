@@ -1,5 +1,6 @@
-function fn_out = cp_BIDSify_main(pth_dat,pth_out,opt)
+function [fn_out, fn_out_nii] = cp_BIDSify_main(pth_dat,pth_out,opt)
 % Function to BIDSify the processed aging data from Callaghan et al. 2014
+% 
 % FORMAT
 %   fn_out = cp_BIDSify_main(pth_raw,pth_out)
 % 
@@ -10,7 +11,8 @@ function fn_out = cp_BIDSify_main(pth_dat,pth_out,opt)
 %       .gzip : zip all the NIfTI files (1) or not (0, default)
 % 
 % OUTPUT
-%   fn_out : whole list of files in the BIDS folder
+%   fn_out     : whole list of files in the BIDS folder
+%   fn_out_nii : whole list of (gzipped) Nifti files
 % 
 % EXAMPLE
 %   pth_dat = 'C:\Dox\2_Data\qMRI_MPM\Data4ChrisPhilips'
@@ -265,11 +267,19 @@ end
 
 %% GZIP all the .nii files to save some space
 if opt.gzip
-    fn_nii = spm_select('FPListRec',pth_out,'^.*\.nii$');
-    for ii=1:size(fn_nii,1)
-        gzip(deblank(fn_nii(ii,:))); % Gzip in situ
-        delete(deblank(fn_nii(ii,:))); % Delete orginal .nii file
-    end
+    flag_gz = struct(...
+        'filt','^.*\.nii$',... % all .nii files
+        'rec', true, ...       % act recursively
+        'delOrig', true);      % delete original file after gzipping 
+    fn_out_nii = cp_gzip(pth_out, flag_gz);
+
+%     fn_nii = spm_select('FPListRec',pth_out,'^.*\.nii$');
+%     for ii=1:size(fn_nii,1)
+%         gzip(deblank(fn_nii(ii,:))); % Gzip in situ
+%         delete(deblank(fn_nii(ii,:))); % Delete orginal .nii file
+%     end
+else
+    fn_out_nii = spm_select('FPListRec',pth_out,'^.*\.nii$');
 end
 
 %% Collect output -> whole list of files in the BIDS folder
