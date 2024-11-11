@@ -39,7 +39,7 @@ function fn_out = cp_BIDSify_main(pth_dat,pth_out,opt)
 % Written by C. Phillips.
 % Cyclotron Research Centre, University of Liege, Belgium
 
-%% Input check and defautl values
+%% Input check and default values
 if nargin==0
     pth_dat = pwd;
 end

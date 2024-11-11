@@ -32,9 +32,7 @@ function fn_out = cp_prepTopJSON(pth_out)
 % Written by C. Phillips.
 % Cyclotron Research Centre, University of Liege, Belgium
 
-% 2. Add the top-level .JSON files
-%=================================
-% write out the dataset_desription.json files
+% Write out the dataset_desription.json files
 fn_dataset_desription_json = fullfile(pth_out,'dataset_desription.json');
 Tool = struct( ...
     'Name', {'SPM' , 'VBQ'}, ...
