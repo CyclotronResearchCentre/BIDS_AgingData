@@ -109,14 +109,14 @@ AgingData/derivatives/SPM12dartel/
       sub-S123_MTsat_space-MNI_desc-smomod_label-GM_probseg.nii
       sub-S123_MTsat_space-MNI_desc-smomod_label-WM_probseg.nii
       sub-S123_MTsat_space-MNI_desc-smomod_probseg.json
-      sub-S123_MTsat_space-MNI_desc-GMsmo.nii
-      sub-S123_MTsat_space-MNI_desc-WMsmo.nii
-      sub-S123_PDmap_space-MNI_desc-GMsmo.nii
-      sub-S123_PDmap_space-MNI_desc-WMsmo.nii
-      sub-S123_R1map_space-MNI_desc-GMsmo.nii
-      sub-S123_R1map_space-MNI_desc-WMsmo.nii
-      sub-S123_R2starmap_space-MNI_desc-GMsmo.nii
-      sub-S123_R2starmap_space-MNI_desc-WMsmo.nii
+      sub-S123_space-MNI_desc-GMsmo_MTsat.nii
+      sub-S123_space-MNI_desc-WMsmo_MTsat.nii
+      sub-S123_space-MNI_desc-GMsmo_PDmap.nii
+      sub-S123_space-MNI_desc-WMsmo_PDmap.nii
+      sub-S123_space-MNI_desc-GMsmo_R1map.nii
+      sub-S123_space-MNI_desc-WMsmo_R1map.nii
+      sub-S123_space-MNI_desc-GMsmo_R2starmap.nii
+      sub-S123_space-MNI_desc-WMsmo_R2starmap.nii
 ````
 
 ---
@@ -139,16 +139,19 @@ The original processed data  are organized like this, on my HD from the top fold
     - `_MT` for MTsat images, there are thus corresponding images with the `A`, `R1` & `R2s` suffixes.
 - the same for the `Fin_dart_p2` folder, with WM-weighted warped maps used for the statistical analysis
 
+---
+## Remaining questions & to-do's
+
+- Need to explain at the top level how the data were processed, i.e. state clearly what I drafted in the 'Previous preprocessing steps' section here above.
+  :arrow_forward: a bit tedious but no big deal
+- do we add the smooth modulated warp GM (WM too?) density maps, used for the VBM analysis?
+  :arrow_forward: I would vote for this, as they are part of the data used in the paper. See [issue #2](https://github.com/CyclotronResearchCentre/BIDS_AgingData/issues/2).
+- if we got one step further back, should we share the warped quantitative maps **before** the tissue-weighted smoothing ? This could allow exploring other smoothing options and/or study the effect of any specific smoothing approach on the results.
+  :arrow_forward: I would vote for this, even if these are not part the data used in the paper. See [issue #3](https://github.com/CyclotronResearchCentre/BIDS_AgingData/issues/3).
 
 
 
 
 
 
-
-
-
-````
-dsfg
-````
 
