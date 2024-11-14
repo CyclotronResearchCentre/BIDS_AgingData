@@ -138,6 +138,13 @@ The original processed data  are organized like this, on my HD from the top fold
     - `MT02253` encodes for the subjects index, `02253`, and scanner label, `MT` (other scanner would be `MQ`);
     - `_MT` for MTsat images, there are thus corresponding images with the `A`, `R1` & `R2s` suffixes.
 - the same for the `Fin_dart_p2` folder, with WM-weighted warped maps used for the statistical analysis
+- the `MPM_Processing` folder with the not-yet-smoothed data, original tissue maps, and more
+  - original tissue class images `c1`, `c2` & `c3` images (3 x 138 = 414 files)
+  - modulated warped tissue class images `mwc1`, `mwc2` & `mwc3` images (3 x 138 = 414 files) 
+  - DARTEL's 6th "template" `Template_6.nii` (1 file)
+  - DARTEL warps `u*.nii` images (138 files) 
+  - warped quantitative maps, modulated `mw*.nii` or not  `w*.nii`, (2 x 4 x 138 = 1104 files) 
+
 
 ---
 ## Remaining questions & to-do's
@@ -149,7 +156,17 @@ The original processed data  are organized like this, on my HD from the top fold
 - if we got one step further back, should we share the warped quantitative maps **before** the tissue-weighted smoothing ? This could allow exploring other smoothing options and/or study the effect of any specific smoothing approach on the results.
   :arrow_forward: I would vote for this, even if these are not part the data used in the paper. See [issue #3](https://github.com/CyclotronResearchCentre/BIDS_AgingData/issues/3).
 
+---
 
+## Dealing with things in November 2025
+
+Got the not-yet-smoothed data, placed in the `MPM_Processing` folder.
+
+Now need to arrange the data in various derivatives folders:
+
+- `SPM12_dartel` :arrow_forward: images that have been warped but NOT smoothed yet + the warps
+- `SPM12_TWsmooth` :arrow_forward: the tissue-weighted smoothed images
+- `SPM12_preproc` :arrow_forward: the tissue probability maps in subject space
 
 
 

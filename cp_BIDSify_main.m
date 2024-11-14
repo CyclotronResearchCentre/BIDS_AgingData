@@ -15,8 +15,8 @@ function [fn_out, fn_out_nii] = cp_BIDSify_main(pth_dat,pth_out,opt)
 %   fn_out_nii : whole list of (gzipped) Nifti files
 % 
 % EXAMPLE
-%   pth_dat = 'C:\Dox\2_Data\qMRI_MPM\Data4ChrisPhilips'
-%   pth_out = 'C:\Dox\2_Data\qMRI_MPM\BIDS_AgingData'
+%   pth_dat = 'D:\ccc_DATA\qMRI_Ageing_MPM\Data4ChrisPhilips'
+%   pth_out = 'D:\ccc_DATA\qMRI_Ageing_MPM\BIDS_AgingData'
 %   opt = struct('gzip', true); % -> gzip all .nii files at the end
 %   fn_out = cp_BIDSify_main(pth_dat,pth_out, opt)
 % 
@@ -29,10 +29,16 @@ function [fn_out, fn_out_nii] = cp_BIDSify_main(pth_dat,pth_out,opt)
 %       2. add the generic .json files
 %       3. gather mean and mask images
 % - then deal with the subjects images
+%       1. the warped images, q-maps and modulated tissue class images 
+%          -> "SPM12_dartel" derivative
+%       2. the tissue-weighted (GM & WM) smoothed q-maps 
+%          -> "SPM12_TWsmooth" derivative
+%       3. the native space tissue class images
+%          -> "SPM12_preproc" derivative
 % 
 % STILL MISSING
 % - data licence 
-% - full description of how the data were spatially processed
+% - full description of how the data were spatially processed before hand
 % - JSON file describing the tissue-weighted smoothed normalized 
 %   quantitative maps, globally for all the subjects.
 %_______________________________________________________________________
