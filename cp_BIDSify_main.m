@@ -131,6 +131,88 @@ for isub = 1:Nsubj
     end
 end
 
+%% Deal with warped individual subjects data: quantitative and tissue maps
+% 1. Define the path to all the images:
+% - modulated warped tissue maps, mwc1/2/3
+% - warped quantitative maps, w*[A MTsat R1 R2*]
+% - warp images, u*MT
+% plus Dartel template #6
+pth_wMaps = fullfile(pth_dat, 'MPM_Processing');
+tissueTypes = {'GM', 'WM', 'CSF'};
+imgTypes_orig = {'A','MT','R1','R2s'};
+imgTypes = {'PDmap','MTsat','R1map','R2starmap'}; % BIDS suffixes
+
+% 2. Deal with each subject one by one
+for isub = 1:Nsubj
+    % Create subject's target folders
+    pth_isub_anat = fullfile(pth_drv_dartel, ...
+        sprintf('sub-%s',participant_id{isub}),'anat');
+    if ~exist(pth_isub_anat,'dir'), mkdir(pth_isub_anat); end
+    
+    % Deal with modulated warped tissue maps, mwc1/2/3
+    for ii=1:3
+        % Original image full-filename
+        fn_isub_orig = fullfile(pth_wMaps, ...
+            sprintf('mwc%d%s_MT.nii', ii,participant_orig{isub}) );
+        % BIDS image full-filename
+        fn_isub = fullfile(pth_isub_anat, ...
+            sprintf('sub-%s_MTsat_space-MNI_desc-modsmo_label-%s_probseg.nii', ...
+            participant_id{isub}, ...
+            tissueTypes{ii} ) );
+        if ~exist(fn_isub_orig,'file')
+            fprintf('\nERROR. Could not find file :\n\t%s\n', ...
+                fn_isub_orig);
+        else
+            copyfile(fn_isub_orig,fn_isub)
+        end
+    end
+    
+    % Deal with warped quantitative maps, w*[A MTsat R1 R2*]
+    for ii=1:4
+        % Original image full-filename
+        fn_isub_orig = fullfile(pth_wMaps, ...
+            sprintf('w%s_%s.nii', participant_orig{isub}, imgTypes_orig{ii}) );
+        % BIDS image full-filename
+        fn_isub = fullfile(pth_isub_anat, ...
+            sprintf('sub-%s_space-popMNI_%s.nii', ...
+            participant_id{isub}, ...
+            imgTypes{ii} ) );
+        if ~exist(fn_isub_orig,'file')
+            fprintf('\nERROR. Could not find file :\n\t%s\n', ...
+                fn_isub_orig);
+        else
+            copyfile(fn_isub_orig,fn_isub)
+        end
+    end
+    
+    % Deal with warp images, u*MT
+    % Original image full-filename
+    fn_isub_orig = fullfile(pth_wMaps, ...
+        sprintf('u%s_MT.nii', participant_orig{isub}) );
+    % BIDS image full-filename
+    fn_isub = fullfile(pth_isub_anat, ...
+        sprintf('sub-%s_MTsat_desc-dartelwarps.nii', ...
+        participant_id{isub} ) );
+    if ~exist(fn_isub_orig,'file')
+        fprintf('\nERROR. Could not find file :\n\t%s\n', ...
+            fn_isub_orig);
+    else
+        copyfile(fn_isub_orig,fn_isub)
+    end
+end
+
+% 3. Deal with Dartel template #6
+fn_template_orig = spm_select('FPList',pth_wMaps,'^Template_6');
+fn_template = spm_file(fn_template_orig,'path',pth_drv_dartel);
+for ii=1:size(fn_template_orig,1)
+    if ~exist(fn_template_orig(ii,:),'file')
+        fprintf('\nERROR. Could not find file :\n\t%s\n', ...
+            fn_template_orig(ii,:));
+    else
+        copyfile(fn_template_orig(ii,:),fn_template(ii,:))
+    end
+end
+
 %% GZIP all the .nii files to save some space
 if opt.gzip
     flag_gz = struct(...
