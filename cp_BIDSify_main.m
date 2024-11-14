@@ -58,10 +58,18 @@ if nargin<3
     opt = struct('gzip', false);
 end
 
-% Deal with pathes for the BIDSified data
+%% Deal with pathes for the BIDSified data, in separate derivative folders
 if ~exist(pth_out,'dir'), mkdir(pth_out); end
-pth_deriv = fullfile(pth_out,'derivatives','SPM12dartel');
+% Main derivatieve folder
+pth_deriv = fullfile(pth_out,'derivatives');
 if ~exist(pth_deriv,'dir'), mkdir(pth_deriv); end
+% Specific derivative folders: 'dartel', 'TWsmooth' and 'preproc'
+pth_drv_dartel = fullfile(pth_deriv,'dartel');
+if ~exist(pth_drv_dartel,'dir'), mkdir(pth_drv_dartel); end
+pth_drv_TWsmooth = fullfile(pth_deriv,'TWsmoot');
+if ~exist(pth_drv_TWsmooth,'dir'), mkdir(pth_drv_TWsmooth); end
+pth_drv_preproc = fullfile(pth_deriv,'preproc');
+if ~exist(pth_drv_preproc,'dir'), mkdir(pth_drv_preproc); end
 
 %% Deal with top level files
 % 1. Labels and regressors -> participants.tsv file
@@ -78,7 +86,7 @@ fn_dataset_desription_json = cp_prepTopJSON(pth_out); %#ok<*NASGU>
 %================================
 fn_MaskMean = cp_prepMeanMask(pth_dat,pth_deriv);
 
-%% Deal with individual subjects data
+%% Deal with TW-smoothed individual subjects data
 % 1. Define the path to all the images, 2 x 4 sets: [GM WM] x [A MTsat R1 R2*]
 %    + the different types of maps & tissues
 imgTypes_orig = {'A','MT','R1','R2s'};
@@ -88,28 +96,34 @@ pth_qMRIs = cell(2,4);
 for ii=1:2 % tissue types
     for jj=1:4 % maps types
         pth_qMRIs{ii,jj} = fullfile(pth_dat, ...
-            sprintf('Fin_dart_p%d',ii),sprintf('Imgs_%s',imgTypes_orig{jj}));
+            sprintf('Fin_dart_p%d',ii), ...
+            sprintf('Imgs_%s',imgTypes_orig{jj}));
     end
 end
 
 % 2. Deal with each subject one by one
 for isub = 1:Nsubj
-    % Create subject's folders
-    pth_isub_anat = fullfile(pth_deriv,sprintf('sub-%s',participant_id{isub}),'anat');
+    % Create subject's target folders
+    pth_isub_anat = fullfile(pth_drv_TWsmooth, ...
+        sprintf('sub-%s',participant_id{isub}),'anat');
     if ~exist(pth_isub_anat,'dir'), mkdir(pth_isub_anat); end
     
     % Deal with all 8 images
     for ii=1:2
         for jj=1:4
+            % Original image full-filename
             fn_isub_orig = fullfile(pth_qMRIs{ii,jj}, ...
-                sprintf('fin_dart_p%d%s_%s.nii',ii,participant_orig{isub},imgTypes_orig{jj}) );
+                sprintf('fin_dart_p%d%s_%s.nii', ...
+                    ii,participant_orig{isub},imgTypes_orig{jj}) );
+            % BIDS image full-filename
             fn_isub = fullfile(pth_isub_anat, ...
                 sprintf('sub-%s_space-MNI_desc-%ssmo_%s.nii', ...
                     participant_id{isub}, ...
                     tissueTypes{ii}, ...
                     imgTypes{jj} ) );
             if ~exist(fn_isub_orig,'file')
-                fprintf('\nERROR. Could not find file :\n\t%s\n', fn_isub_orig);
+                fprintf('\nERROR. Could not find file :\n\t%s\n', ...
+                    fn_isub_orig);
             else
                 copyfile(fn_isub_orig,fn_isub)
             end
