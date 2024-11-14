@@ -117,12 +117,6 @@ if opt.gzip
         'rec', true, ...       % act recursively
         'delOrig', true);      % delete original file after gzipping 
     fn_out_nii = cp_gzip(pth_out, flag_gz);
-
-%     fn_nii = spm_select('FPListRec',pth_out,'^.*\.nii$');
-%     for ii=1:size(fn_nii,1)
-%         gzip(deblank(fn_nii(ii,:))); % Gzip in situ
-%         delete(deblank(fn_nii(ii,:))); % Delete orginal .nii file
-%     end
 else
     fn_out_nii = spm_select('FPListRec',pth_out,'^.*\.nii$');
 end

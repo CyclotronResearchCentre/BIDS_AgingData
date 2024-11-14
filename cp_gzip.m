@@ -87,7 +87,7 @@ end
 % gzip(cellstr(fn_gz))
 % % 
 % % When multiple files are passed, Gzip will put all the compressed files
-% % into the folder of the *1st* filer.
+% % into the folder of the *1st* file.
 % % Therefore, it is safer to loop over the files and ensure their
 % % compressed version is created next to the original one!
 % tmp = fn_gz(3,:)
