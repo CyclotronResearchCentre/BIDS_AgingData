@@ -1,4 +1,4 @@
-function [participant_id,fn_out] = cp_prepLabelsRegr(pth_dat,pth_out)
+function [participant_id,participant_orig,fn_out] = cp_prepLabelsRegr(pth_dat,pth_out)
 % Function to prepare the BIDS labels and create the participants.tsv file
 % with the 4 variables provided (age, sex, TIV, scanner). Moreover the 
 % subjects order/label is randomized for improved anonymization.
@@ -6,21 +6,22 @@ function [participant_id,fn_out] = cp_prepLabelsRegr(pth_dat,pth_out)
 % function
 % 
 % FORMAT
-%   fn_out = cp_prepLabelsRegr(pth_dat,pth_out)
+%   [participant_id,participant_orig,fn_out] = cp_prepLabelsRegr(pth_dat,pth_out)
 % 
 % INPUT
 %   pth_dat : path to folder with all the data, see Readme
 %   pth_out : path where to write the BIDSified data, see Readme
 % 
 % OUTPUT
-%   participant_id : BIDS lables of the subjects
-%   fn_out         : list of files created
+%   participant_id   : BIDS labels of the subjects
+%   participant_orig : original labels of the subjects
+%   fn_out           : list of files created
 % 
 % EXAMPLE
 % 
-%   pth_dat = 'C:\Dox\2_Data\qMRI_MPM\Data4ChrisPhilips'
-%   pth_out = 'C:\Dox\2_Data\qMRI_MPM\BIDS_AgingData'
-%   [participant_id,fn_out] = cp_prepLabelsRegr(pth_dat,pth_out)
+%   pth_dat = 'D:\ccc_DATA\qMRI_Ageing_MPM\Data4ChrisPhilips'
+%   pth_out = 'D:\ccc_DATA\qMRI_Ageing_MPM\BIDS_AgingData'
+%   [label_id,label_orig,fn_out] = cp_prepLabelsRegr(pth_dat,pth_out)
 %_______________________________________________________________________
 % Copyright (C) 2024 Cyclotron Research Centre
 

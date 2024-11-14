@@ -66,7 +66,8 @@ if ~exist(pth_deriv,'dir'), mkdir(pth_deriv); end
 %% Deal with top level files
 % 1. Labels and regressors -> participants.tsv file
 %==================================================
-participant_id = cp_prepLabelsRegr(pth_dat,pth_out);
+% Original and BIDS labels needed to cath, copy & rename all data...
+[participant_id,participant_orig] = cp_prepLabelsRegr(pth_dat,pth_out);
 Nsubj = numel(participant_id);
 
 % 2. Add the top-level .JSON files
