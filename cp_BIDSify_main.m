@@ -1,45 +1,45 @@
 function [fn_out, fn_out_nii] = cp_BIDSify_main(pth_dat,pth_out,opt)
 % Function to BIDSify the processed aging data from Callaghan et al. 2014
-% 
+%
 % FORMAT
 %   fn_out = cp_BIDSify_main(pth_raw,pth_out)
-% 
+%
 % INPUT
 %   pth_dat : path to folder with all the data, see Readme
 %   pth_out : path where to write the BIDSified data, see Readme
 %   opt     : option structure flag
 %       .gzip : zip all the NIfTI files (1) or not (0, default)
-% 
+%
 % OUTPUT
 %   fn_out     : whole list of files in the BIDS folder
 %   fn_out_nii : whole list of (gzipped) Nifti files
-% 
+%
 % EXAMPLE
 %   pth_dat = 'D:\ccc_DATA\qMRI_Ageing_MPM\Data4ChrisPhilips'
 %   pth_out = 'D:\ccc_DATA\qMRI_Ageing_MPM\BIDS_AgingData'
 %   opt = struct('gzip', true); % -> gzip all .nii files at the end
 %   fn_out = cp_BIDSify_main(pth_dat,pth_out, opt)
-% 
+%
 % REFERENCE
 % Callaghan et al. 2014, https://doi.org/10.1016/j.neurobiolaging.2014.02.008
-% 
+%
 % PROCESS
 % - start top level duties
-%       1. randomizing the subjects list, produce 'participants.tsv' file 
+%       1. randomizing the subjects list, produce 'participants.tsv' file
 %       2. add the generic .json files
 %       3. gather mean and mask images
 % - then deal with the subjects images
-%       1. the warped images, q-maps and modulated tissue class images 
+%       1. the warped images, q-maps and modulated tissue class images
 %          -> "SPM12_dartel" derivative
-%       2. the tissue-weighted (GM & WM) smoothed q-maps 
+%       2. the tissue-weighted (GM & WM) smoothed q-maps
 %          -> "SPM12_TWsmooth" derivative
 %       3. the native space tissue class images
 %          -> "SPM12_preproc" derivative
-% 
+%
 % STILL MISSING
-% - data licence 
+% - data licence
 % - full description of how the data were spatially processed before hand
-% - JSON file describing the tissue-weighted smoothed normalized 
+% - JSON file describing the tissue-weighted smoothed normalized
 %   quantitative maps, globally for all the subjects.
 %_______________________________________________________________________
 % Copyright (C) 2023 Cyclotron Research Centre
@@ -92,10 +92,10 @@ fn_MaskMean = cp_prepMeanMask(pth_dat,pth_deriv);
 imgTypes_orig = {'A','MT','R1','R2s'};
 imgTypes = {'PDmap','MTsat','R1map','R2starmap'}; % BIDS suffixes
 tissueTypes = {'GM', 'WM'};
-pth_qMRIs = cell(2,4);
+pth_swqMRIs = cell(2,4);
 for ii=1:2 % tissue types
     for jj=1:4 % maps types
-        pth_qMRIs{ii,jj} = fullfile(pth_dat, ...
+        pth_swqMRIs{ii,jj} = fullfile(pth_dat, ...
             sprintf('Fin_dart_p%d',ii), ...
             sprintf('Imgs_%s',imgTypes_orig{jj}));
     end
@@ -112,15 +112,15 @@ for isub = 1:Nsubj
     for ii=1:2
         for jj=1:4
             % Original image full-filename
-            fn_isub_orig = fullfile(pth_qMRIs{ii,jj}, ...
+            fn_isub_orig = fullfile(pth_swqMRIs{ii,jj}, ...
                 sprintf('fin_dart_p%d%s_%s.nii', ...
-                    ii,participant_orig{isub},imgTypes_orig{jj}) );
+                ii,participant_orig{isub},imgTypes_orig{jj}) );
             % BIDS image full-filename
             fn_isub = fullfile(pth_isub_anat, ...
                 sprintf('sub-%s_space-MNI_desc-%ssmo_%s.nii', ...
-                    participant_id{isub}, ...
-                    tissueTypes{ii}, ...
-                    imgTypes{jj} ) );
+                participant_id{isub}, ...
+                tissueTypes{ii}, ...
+                imgTypes{jj} ) );
             if ~exist(fn_isub_orig,'file')
                 fprintf('\nERROR. Could not find file :\n\t%s\n', ...
                     fn_isub_orig);
@@ -136,7 +136,7 @@ if opt.gzip
     flag_gz = struct(...
         'filt','^.*\.nii$',... % all .nii files
         'rec', true, ...       % act recursively
-        'delOrig', true);      % delete original file after gzipping 
+        'delOrig', true);      % delete original file after gzipping
     fn_out_nii = cp_gzip(pth_out, flag_gz);
 else
     fn_out_nii = spm_select('FPListRec',pth_out,'^.*\.nii$');
@@ -144,7 +144,7 @@ end
 
 %% Collect output -> whole list of files in the BIDS folder
 fn_out = spm_select('FPListRec',pth_out,'.*');
-    
+
 end
 %%
 
