@@ -64,11 +64,11 @@ if ~exist(pth_out,'dir'), mkdir(pth_out); end
 pth_deriv = fullfile(pth_out,'derivatives');
 if ~exist(pth_deriv,'dir'), mkdir(pth_deriv); end
 % Specific derivative folders: 'dartel', 'TWsmooth' and 'preproc'
-pth_drv_dartel = fullfile(pth_deriv,'dartel');
+pth_drv_dartel = fullfile(pth_deriv,'SPM12_dartel');
 if ~exist(pth_drv_dartel,'dir'), mkdir(pth_drv_dartel); end
 pth_drv_TWsmooth = fullfile(pth_deriv,'TWsmoot');
 if ~exist(pth_drv_TWsmooth,'dir'), mkdir(pth_drv_TWsmooth); end
-pth_drv_preproc = fullfile(pth_deriv,'preproc');
+pth_drv_preproc = fullfile(pth_deriv,'SPM12_preproc');
 if ~exist(pth_drv_preproc,'dir'), mkdir(pth_drv_preproc); end
 
 %% Deal with top level files
@@ -111,7 +111,7 @@ for isub = 1:Nsubj
     % Deal with all 8 images
     for ii=1:2
         for jj=1:4
-            % Original image full-filename
+            % Source image full-filename
             fn_isub_orig = fullfile(pth_swqMRIs{ii,jj}, ...
                 sprintf('fin_dart_p%d%s_%s.nii', ...
                 ii,participant_orig{isub},imgTypes_orig{jj}) );
@@ -151,7 +151,7 @@ for isub = 1:Nsubj
     
     % Deal with modulated warped tissue maps, mwc1/2/3
     for ii=1:3
-        % Original image full-filename
+        % Source image full-filename
         fn_isub_orig = fullfile(pth_wMaps, ...
             sprintf('mwc%d%s_MT.nii', ii,participant_orig{isub}) );
         % BIDS image full-filename
@@ -169,7 +169,7 @@ for isub = 1:Nsubj
     
     % Deal with warped quantitative maps, w*[A MTsat R1 R2*]
     for ii=1:4
-        % Original image full-filename
+        % Source image full-filename
         fn_isub_orig = fullfile(pth_wMaps, ...
             sprintf('w%s_%s.nii', participant_orig{isub}, imgTypes_orig{ii}) );
         % BIDS image full-filename
@@ -210,6 +210,37 @@ for ii=1:size(fn_template_orig,1)
             fn_template_orig(ii,:));
     else
         copyfile(fn_template_orig(ii,:),fn_template(ii,:))
+    end
+end
+
+%% Deal with the tissue maps still in subject space, c1/2/3*
+% 1. Define the path to all the images, c1/2/3
+pth_cMaps = fullfile(pth_dat, 'MPM_Processing');
+tissueTypes = {'GM', 'WM', 'CSF'};
+
+% 2. Deal with each subject one by one
+for isub = 1:Nsubj
+    % Create subject's target folders
+    pth_isub_anat = fullfile(pth_drv_preproc, ...
+        sprintf('sub-%s',participant_id{isub}),'anat');
+    if ~exist(pth_isub_anat,'dir'), mkdir(pth_isub_anat); end
+    
+    % Deal with modulated warped tissue maps, mwc1/2/3
+    for ii=1:3
+        % Source image full-filename
+        fn_isub_orig = fullfile(pth_wMaps, ...
+            sprintf('c%d%s_MT.nii', ii,participant_orig{isub}) );
+        % BIDS image full-filename
+        fn_isub = fullfile(pth_isub_anat, ...
+            sprintf('sub-%s_MTsat_space-SUBJ_label-%s_probseg.nii', ...
+            participant_id{isub}, ...
+            tissueTypes{ii} ) );
+        if ~exist(fn_isub_orig,'file')
+            fprintf('\nERROR. Could not find file :\n\t%s\n', ...
+                fn_isub_orig);
+        else
+            copyfile(fn_isub_orig,fn_isub)
+        end
     end
 end
 
