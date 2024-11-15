@@ -43,10 +43,12 @@ fn_IdKeys = fullfile(pth_out,'IdKeys.tsv');
 
 if exist(fn_IdKeys,'file')
     IdKeys = spm_load(fn_IdKeys);
-    SubjPerm = IdKeys.Index_orig;
+    SubjPerm = IdKeys.Index_orig';
+    fl_save_IdKeys = false;
 else
     % Randomization of subjects
     SubjPerm = randperm(Nsubj);
+    fl_save_IdKeys = true;
 end
 
 % Create all arrays with participants informations
@@ -72,10 +74,13 @@ for isub = 1:Nsubj
         scanner{isub} = 'quatro';
     end
 end
-% write out the table with original id keys and permutation
-participants_tb = table(participant_id,participant_orig,SubjPerm');
-participants_tb.Properties.VariableNames{3} = 'Index_orig';
-spm_save(fn_IdKeys,participants_tb)
+
+if fl_save_IdKeys
+    % write out the table with original id keys and permutation
+    participants_tb = table(participant_id,participant_orig,SubjPerm');
+    participants_tb.Properties.VariableNames{3} = 'Index_orig';
+    spm_save(fn_IdKeys,participants_tb)
+end
 
 % write out the participants.tsv/.json files
 fn_participants_tsv = fullfile(pth_out,'participants.tsv');
