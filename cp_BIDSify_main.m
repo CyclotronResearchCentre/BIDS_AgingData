@@ -9,6 +9,10 @@ function [fn_out, fn_out_nii] = cp_BIDSify_main(pth_dat,pth_out,opt)
 %   pth_out : path where to write the BIDSified data, see Readme
 %   opt     : option structure flag
 %       .gzip : zip all the NIfTI files (1) or not (0, default)
+%       .ops  : type of data dalt with a 1x3 vector, def. do all [1 1 1]
+%           * TW-smoothed warped quantiative maps
+%           * warped quantitative and tissue maps
+%           * subject space tissue maps
 %
 % OUTPUT
 %   fn_out     : whole list of files in the BIDS folder
@@ -17,7 +21,10 @@ function [fn_out, fn_out_nii] = cp_BIDSify_main(pth_dat,pth_out,opt)
 % EXAMPLE
 %   pth_dat = 'D:\ccc_DATA\qMRI_Ageing_MPM\Data4ChrisPhilips'
 %   pth_out = 'D:\ccc_DATA\qMRI_Ageing_MPM\BIDS_AgingData'
-%   opt = struct('gzip', true); % -> gzip all .nii files at the end
+%   opt = struct( ...
+%       'gzip', true, ... % -> gzip all .nii files at the end
+%       'ops', [1 1 0]);  % -> deal with warped and TW-smoothed data but
+%                         %    not subject-space tissue maps
 %   fn_out = cp_BIDSify_main(pth_dat,pth_out, opt)
 %
 % REFERENCE
@@ -55,7 +62,9 @@ if nargin<2
     pth_out = pth_dat;
 end
 if nargin<3
-    opt = struct('gzip', false);
+    opt = struct( ...
+        'gzip', false, ...
+        'ops', [1 1 1]);
 end
 
 %% Deal with pathes for the BIDSified data, in separate derivative folders
@@ -87,40 +96,81 @@ fn_dataset_desription_json = cp_prepTopJSON(pth_out); %#ok<*NASGU>
 fn_MaskMean = cp_prepMeanMask(pth_dat,pth_deriv);
 
 %% Deal with TW-smoothed individual subjects data
-% 1. Define the path to all the images, 2 x 4 sets: [GM WM] x [A MTsat R1 R2*]
-%    + the different types of maps & tissues
-imgTypes_orig = {'A','MT','R1','R2s'};
-imgTypes = {'PDmap','MTsat','R1map','R2starmap'}; % BIDS suffixes
-tissueTypes = {'GM', 'WM'};
-pth_swqMRIs = cell(2,4);
-for ii=1:2 % tissue types
-    for jj=1:4 % maps types
-        pth_swqMRIs{ii,jj} = fullfile(pth_dat, ...
-            sprintf('Fin_dart_p%d',ii), ...
-            sprintf('Imgs_%s',imgTypes_orig{jj}));
+if opt.ops(1)
+    % 1. Define the path to all the images, 2 x 4 sets: [GM WM] x [A MTsat R1 R2*]
+    %    + the different types of maps & tissues
+    imgTypes_orig = {'A','MT','R1','R2s'};
+    imgTypes = {'PDmap','MTsat','R1map','R2starmap'}; % BIDS suffixes
+    tissueTypes = {'GM', 'WM'};
+    pth_swqMRIs = cell(2,4);
+    for ii=1:2 % tissue types
+        for jj=1:4 % maps types
+            pth_swqMRIs{ii,jj} = fullfile(pth_dat, ...
+                sprintf('Fin_dart_p%d',ii), ...
+                sprintf('Imgs_%s',imgTypes_orig{jj}));
+        end
+    end
+    
+    % 2. Deal with each subject one by one
+    for isub = 1:Nsubj
+        % Create subject's target folders
+        pth_isub_anat = fullfile(pth_drv_TWsmooth, ...
+            sprintf('sub-%s',participant_id{isub}),'anat');
+        if ~exist(pth_isub_anat,'dir'), mkdir(pth_isub_anat); end
+        
+        % Deal with all 8 images
+        for ii=1:2
+            for jj=1:4
+                % Source image full-filename
+                fn_isub_orig = fullfile(pth_swqMRIs{ii,jj}, ...
+                    sprintf('fin_dart_p%d%s_%s.nii', ...
+                    ii,participant_orig{isub},imgTypes_orig{jj}) );
+                % BIDS image full-filename
+                fn_isub = fullfile(pth_isub_anat, ...
+                    sprintf('sub-%s_space-MNI_desc-%ssmo_%s.nii', ...
+                    participant_id{isub}, ...
+                    tissueTypes{ii}, ...
+                    imgTypes{jj} ) );
+                if ~exist(fn_isub_orig,'file')
+                    fprintf('\nERROR. Could not find file :\n\t%s\n', ...
+                        fn_isub_orig);
+                else
+                    copyfile(fn_isub_orig,fn_isub)
+                end
+            end
+        end
     end
 end
 
-% 2. Deal with each subject one by one
-for isub = 1:Nsubj
-    % Create subject's target folders
-    pth_isub_anat = fullfile(pth_drv_TWsmooth, ...
-        sprintf('sub-%s',participant_id{isub}),'anat');
-    if ~exist(pth_isub_anat,'dir'), mkdir(pth_isub_anat); end
+%% Deal with warped individual subjects data: quantitative and tissue maps
+if opt.ops(2)
+    % 1. Define the path to all the images:
+    % - modulated warped tissue maps, mwc1/2/3
+    % - warped quantitative maps, w*[A MTsat R1 R2*]
+    % - warp images, u*MT
+    % plus Dartel template #6
+    pth_wMaps = fullfile(pth_dat, 'MPM_Processing');
+    tissueTypes = {'GM', 'WM', 'CSF'};
+    imgTypes_orig = {'A','MT','R1','R2s'};
+    imgTypes = {'PDmap','MTsat','R1map','R2starmap'}; % BIDS suffixes
     
-    % Deal with all 8 images
-    for ii=1:2
-        for jj=1:4
+    % 2. Deal with each subject one by one
+    for isub = 1:Nsubj
+        % Create subject's target folders
+        pth_isub_anat = fullfile(pth_drv_dartel, ...
+            sprintf('sub-%s',participant_id{isub}),'anat');
+        if ~exist(pth_isub_anat,'dir'), mkdir(pth_isub_anat); end
+        
+        % Deal with modulated warped tissue maps, mwc1/2/3
+        for ii=1:3
             % Source image full-filename
-            fn_isub_orig = fullfile(pth_swqMRIs{ii,jj}, ...
-                sprintf('fin_dart_p%d%s_%s.nii', ...
-                ii,participant_orig{isub},imgTypes_orig{jj}) );
+            fn_isub_orig = fullfile(pth_wMaps, ...
+                sprintf('mwc%d%s_MT.nii', ii,participant_orig{isub}) );
             % BIDS image full-filename
             fn_isub = fullfile(pth_isub_anat, ...
-                sprintf('sub-%s_space-MNI_desc-%ssmo_%s.nii', ...
+                sprintf('sub-%s_MTsat_space-MNI_desc-modsmo_label-%s_probseg.nii', ...
                 participant_id{isub}, ...
-                tissueTypes{ii}, ...
-                imgTypes{jj} ) );
+                tissueTypes{ii} ) );
             if ~exist(fn_isub_orig,'file')
                 fprintf('\nERROR. Could not find file :\n\t%s\n', ...
                     fn_isub_orig);
@@ -128,37 +178,33 @@ for isub = 1:Nsubj
                 copyfile(fn_isub_orig,fn_isub)
             end
         end
-    end
-end
-
-%% Deal with warped individual subjects data: quantitative and tissue maps
-% 1. Define the path to all the images:
-% - modulated warped tissue maps, mwc1/2/3
-% - warped quantitative maps, w*[A MTsat R1 R2*]
-% - warp images, u*MT
-% plus Dartel template #6
-pth_wMaps = fullfile(pth_dat, 'MPM_Processing');
-tissueTypes = {'GM', 'WM', 'CSF'};
-imgTypes_orig = {'A','MT','R1','R2s'};
-imgTypes = {'PDmap','MTsat','R1map','R2starmap'}; % BIDS suffixes
-
-% 2. Deal with each subject one by one
-for isub = 1:Nsubj
-    % Create subject's target folders
-    pth_isub_anat = fullfile(pth_drv_dartel, ...
-        sprintf('sub-%s',participant_id{isub}),'anat');
-    if ~exist(pth_isub_anat,'dir'), mkdir(pth_isub_anat); end
-    
-    % Deal with modulated warped tissue maps, mwc1/2/3
-    for ii=1:3
-        % Source image full-filename
+        
+        % Deal with warped quantitative maps, w*[A MTsat R1 R2*]
+        for ii=1:4
+            % Source image full-filename
+            fn_isub_orig = fullfile(pth_wMaps, ...
+                sprintf('w%s_%s.nii', participant_orig{isub}, imgTypes_orig{ii}) );
+            % BIDS image full-filename
+            fn_isub = fullfile(pth_isub_anat, ...
+                sprintf('sub-%s_space-popMNI_%s.nii', ...
+                participant_id{isub}, ...
+                imgTypes{ii} ) );
+            if ~exist(fn_isub_orig,'file')
+                fprintf('\nERROR. Could not find file :\n\t%s\n', ...
+                    fn_isub_orig);
+            else
+                copyfile(fn_isub_orig,fn_isub)
+            end
+        end
+        
+        % Deal with warp images, u*MT
+        % Original image full-filename
         fn_isub_orig = fullfile(pth_wMaps, ...
-            sprintf('mwc%d%s_MT.nii', ii,participant_orig{isub}) );
+            sprintf('u%s_MT.nii', participant_orig{isub}) );
         % BIDS image full-filename
         fn_isub = fullfile(pth_isub_anat, ...
-            sprintf('sub-%s_MTsat_space-MNI_desc-modsmo_label-%s_probseg.nii', ...
-            participant_id{isub}, ...
-            tissueTypes{ii} ) );
+            sprintf('sub-%s_MTsat_desc-dartelwarps.nii', ...
+            participant_id{isub} ) );
         if ~exist(fn_isub_orig,'file')
             fprintf('\nERROR. Could not find file :\n\t%s\n', ...
                 fn_isub_orig);
@@ -167,79 +213,48 @@ for isub = 1:Nsubj
         end
     end
     
-    % Deal with warped quantitative maps, w*[A MTsat R1 R2*]
-    for ii=1:4
-        % Source image full-filename
-        fn_isub_orig = fullfile(pth_wMaps, ...
-            sprintf('w%s_%s.nii', participant_orig{isub}, imgTypes_orig{ii}) );
-        % BIDS image full-filename
-        fn_isub = fullfile(pth_isub_anat, ...
-            sprintf('sub-%s_space-popMNI_%s.nii', ...
-            participant_id{isub}, ...
-            imgTypes{ii} ) );
-        if ~exist(fn_isub_orig,'file')
+    % 3. Deal with Dartel template #6
+    fn_template_orig = spm_select('FPList',pth_wMaps,'^Template_6');
+    fn_template = spm_file(fn_template_orig,'path',pth_drv_dartel);
+    for ii=1:size(fn_template_orig,1)
+        if ~exist(fn_template_orig(ii,:),'file')
             fprintf('\nERROR. Could not find file :\n\t%s\n', ...
-                fn_isub_orig);
+                fn_template_orig(ii,:));
         else
-            copyfile(fn_isub_orig,fn_isub)
+            copyfile(fn_template_orig(ii,:),fn_template(ii,:))
         end
-    end
-    
-    % Deal with warp images, u*MT
-    % Original image full-filename
-    fn_isub_orig = fullfile(pth_wMaps, ...
-        sprintf('u%s_MT.nii', participant_orig{isub}) );
-    % BIDS image full-filename
-    fn_isub = fullfile(pth_isub_anat, ...
-        sprintf('sub-%s_MTsat_desc-dartelwarps.nii', ...
-        participant_id{isub} ) );
-    if ~exist(fn_isub_orig,'file')
-        fprintf('\nERROR. Could not find file :\n\t%s\n', ...
-            fn_isub_orig);
-    else
-        copyfile(fn_isub_orig,fn_isub)
-    end
-end
-
-% 3. Deal with Dartel template #6
-fn_template_orig = spm_select('FPList',pth_wMaps,'^Template_6');
-fn_template = spm_file(fn_template_orig,'path',pth_drv_dartel);
-for ii=1:size(fn_template_orig,1)
-    if ~exist(fn_template_orig(ii,:),'file')
-        fprintf('\nERROR. Could not find file :\n\t%s\n', ...
-            fn_template_orig(ii,:));
-    else
-        copyfile(fn_template_orig(ii,:),fn_template(ii,:))
     end
 end
 
 %% Deal with the tissue maps still in subject space, c1/2/3*
-% 1. Define the path to all the images, c1/2/3
-pth_cMaps = fullfile(pth_dat, 'MPM_Processing');
-tissueTypes = {'GM', 'WM', 'CSF'};
-
-% 2. Deal with each subject one by one
-for isub = 1:Nsubj
-    % Create subject's target folders
-    pth_isub_anat = fullfile(pth_drv_preproc, ...
-        sprintf('sub-%s',participant_id{isub}),'anat');
-    if ~exist(pth_isub_anat,'dir'), mkdir(pth_isub_anat); end
+if opt.ops(3)
+    % 1. Define the path to all the images, c1/2/3
+    pth_cMaps = fullfile(pth_dat, 'MPM_Processing');
+    tissueTypes = {'GM', 'WM', 'CSF'};
     
-    % Deal with modulated warped tissue maps, mwc1/2/3
-    for ii=1:3
-        % Source image full-filename
-        fn_isub_orig = fullfile(pth_wMaps, ...
-            sprintf('c%d%s_MT.nii', ii,participant_orig{isub}) );
-        % BIDS image full-filename
-        fn_isub = fullfile(pth_isub_anat, ...
-            sprintf('sub-%s_MTsat_space-SUBJ_label-%s_probseg.nii', ...
-            participant_id{isub}, ...
-            tissueTypes{ii} ) );
-        if ~exist(fn_isub_orig,'file')
-            fprintf('\nERROR. Could not find file :\n\t%s\n', ...
-                fn_isub_orig);
-        else
-            copyfile(fn_isub_orig,fn_isub)
+    % 2. Deal with each subject one by one
+    for isub = 1:Nsubj
+        % Create subject's target folders
+        pth_isub_anat = fullfile(pth_drv_preproc, ...
+            sprintf('sub-%s',participant_id{isub}),'anat');
+        if ~exist(pth_isub_anat,'dir'), mkdir(pth_isub_anat); end
+        
+        % Deal with modulated warped tissue maps, mwc1/2/3
+        for ii=1:3
+            % Source image full-filename
+            fn_isub_orig = fullfile(pth_wMaps, ...
+                sprintf('c%d%s_MT.nii', ii,participant_orig{isub}) );
+            % BIDS image full-filename
+            fn_isub = fullfile(pth_isub_anat, ...
+                sprintf('sub-%s_MTsat_space-SUBJ_label-%s_probseg.nii', ...
+                participant_id{isub}, ...
+                tissueTypes{ii} ) );
+            if ~exist(fn_isub_orig,'file')
+                fprintf('\nERROR. Could not find file :\n\t%s\n', ...
+                    fn_isub_orig);
+            else
+                copyfile(fn_isub_orig,fn_isub)
+            end
         end
     end
 end
