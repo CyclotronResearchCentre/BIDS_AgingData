@@ -3,7 +3,11 @@ function [participant_id,participant_orig,fn_out] = cp_prepLabelsRegr(pth_dat,pt
 % with the 4 variables provided (age, sex, TIV, scanner). Moreover the 
 % subjects order/label is randomized for improved anonymization.
 % This function is called at the beginning of the main BIDS-ification
-% function
+% function.
+% 
+% NOTE:
+% If the 'IdKeys' file already exist, then it is loaded and the SAME order
+% of the subject is re-used.
 % 
 % FORMAT
 %   [participant_id,participant_orig,fn_out] = cp_prepLabelsRegr(pth_dat,pth_out)
@@ -34,9 +38,16 @@ function [participant_id,participant_orig,fn_out] = cp_prepLabelsRegr(pth_dat,pt
 fn_labels_regressors = fullfile(pth_dat,'Subjects4Chris.mat');
 load(fn_labels_regressors)
 Nsubj = numel(Subjects4Chris.ID);
+% Filename of table
+fn_IdKeys = fullfile(pth_out,'IdKeys.tsv');
 
-% Randomization of subjects
-SubjPerm = randperm(Nsubj);
+if exist(fn_IdKeys,'file')
+    IdKeys = spm_load(fn_IdKeys);
+    SubjPerm = IdKeys.Index_orig;
+else
+    % Randomization of subjects
+    SubjPerm = randperm(Nsubj);
+end
 
 % Create all arrays with participants informations
 participant_id = cell(Nsubj,1);
@@ -61,9 +72,10 @@ for isub = 1:Nsubj
         scanner{isub} = 'quatro';
     end
 end
-% write out the table with original id keys
-fn_IdKeys = fullfile(pth_out,'IdKeys.tsv');
-spm_save(fn_IdKeys,table(participant_id,participant_orig))
+% write out the table with original id keys and permutation
+participants_tb = table(participant_id,participant_orig,SubjPerm');
+participants_tb.Properties.VariableNames{3} = 'Index_orig';
+spm_save(fn_IdKeys,participants_tb)
 
 % write out the participants.tsv/.json files
 fn_participants_tsv = fullfile(pth_out,'participants.tsv');
