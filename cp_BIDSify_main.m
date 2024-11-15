@@ -9,7 +9,7 @@ function [fn_out, fn_out_nii] = cp_BIDSify_main(pth_dat,pth_out,opt)
 %   pth_out : path where to write the BIDSified data, see Readme
 %   opt     : option structure flag
 %       .gzip : zip all the NIfTI files (1) or not (0, default)
-%       .ops  : type of data dalt with a 1x3 vector, def. do all [1 1 1]
+%       .ops  : flag the data to be dealt with, a 1x3 vector, def. [1 1 1]
 %           * TW-smoothed warped quantiative maps
 %           * warped quantitative and tissue maps
 %           * subject space tissue maps
@@ -73,12 +73,9 @@ if ~exist(pth_out,'dir'), mkdir(pth_out); end
 pth_deriv = fullfile(pth_out,'derivatives');
 if ~exist(pth_deriv,'dir'), mkdir(pth_deriv); end
 % Specific derivative folders: 'dartel', 'TWsmooth' and 'preproc'
-pth_drv_dartel = fullfile(pth_deriv,'SPM12_dartel');
-if ~exist(pth_drv_dartel,'dir'), mkdir(pth_drv_dartel); end
 pth_drv_TWsmooth = fullfile(pth_deriv,'TWsmoot');
-if ~exist(pth_drv_TWsmooth,'dir'), mkdir(pth_drv_TWsmooth); end
+pth_drv_dartel = fullfile(pth_deriv,'SPM12_dartel');
 pth_drv_preproc = fullfile(pth_deriv,'SPM12_preproc');
-if ~exist(pth_drv_preproc,'dir'), mkdir(pth_drv_preproc); end
 
 %% Deal with top level files
 % 1. Labels and regressors -> participants.tsv file
@@ -97,6 +94,7 @@ fn_MaskMean = cp_prepMeanMask(pth_dat,pth_deriv);
 
 %% Deal with TW-smoothed individual subjects data
 if opt.ops(1)
+    if ~exist(pth_drv_TWsmooth,'dir'), mkdir(pth_drv_TWsmooth); end
     % 1. Define the path to all the images, 2 x 4 sets: [GM WM] x [A MTsat R1 R2*]
     %    + the different types of maps & tissues
     imgTypes_orig = {'A','MT','R1','R2s'};
@@ -144,6 +142,7 @@ end
 
 %% Deal with warped individual subjects data: quantitative and tissue maps
 if opt.ops(2)
+    if ~exist(pth_drv_dartel,'dir'), mkdir(pth_drv_dartel); end
     % 1. Define the path to all the images:
     % - modulated warped tissue maps, mwc1/2/3
     % - warped quantitative maps, w*[A MTsat R1 R2*]
@@ -168,7 +167,7 @@ if opt.ops(2)
                 sprintf('mwc%d%s_MT.nii', ii,participant_orig{isub}) );
             % BIDS image full-filename
             fn_isub = fullfile(pth_isub_anat, ...
-                sprintf('sub-%s_MTsat_space-MNI_desc-modsmo_label-%s_probseg.nii', ...
+                sprintf('sub-%s_MTsat_space-MNI_desc-mod_label-%s_probseg.nii', ...
                 participant_id{isub}, ...
                 tissueTypes{ii} ) );
             if ~exist(fn_isub_orig,'file')
@@ -186,7 +185,7 @@ if opt.ops(2)
                 sprintf('w%s_%s.nii', participant_orig{isub}, imgTypes_orig{ii}) );
             % BIDS image full-filename
             fn_isub = fullfile(pth_isub_anat, ...
-                sprintf('sub-%s_space-popMNI_%s.nii', ...
+                sprintf('sub-%s_space-MNI_%s.nii', ...
                 participant_id{isub}, ...
                 imgTypes{ii} ) );
             if ~exist(fn_isub_orig,'file')
@@ -228,6 +227,7 @@ end
 
 %% Deal with the tissue maps still in subject space, c1/2/3*
 if opt.ops(3)
+    if ~exist(pth_drv_preproc,'dir'), mkdir(pth_drv_preproc); end
     % 1. Define the path to all the images, c1/2/3
     pth_cMaps = fullfile(pth_dat, 'MPM_Processing');
     tissueTypes = {'GM', 'WM', 'CSF'};
