@@ -17,10 +17,7 @@ function fn_out = cp_prepTopJSON(pth_out)
 %   fn_out = cp_prepTopJSON(pth_out)
 % 
 % TO DO!
-% 1/ Define a few more things
-%   - which SPM and VBQ version was used ?
-%   - which licence for the data ?
-% 2/ Add the description of
+% Add the description of
 %   - warped quantitative maps
 %   - modulate warped tissue maps
 %   - tissue-weighted smmoothed warped quantitative maps
