@@ -106,6 +106,14 @@ fn_MaskMean = cp_prepMeanMask(pth_dat,pth_deriv);
 %     fclose(fid);
 % end
 
+% 5. Create the .bidsignore files to pass validator
+%==============================================
+% It's a text file named '.bidsignore' with just this in body
+%   /participants.tsv
+%   /participants.json
+%   *_T1w.nii
+
+
 %% Deal with TW-smoothed individual subjects data
 if opt.ops(1)
     if ~exist(pth_drv_TWsmooth,'dir'), mkdir(pth_drv_TWsmooth); end
