@@ -92,17 +92,19 @@ fn_dataset_desription_json = cp_prepTopJSON(pth_out); %#ok<*NASGU>
 %================================
 fn_MaskMean = cp_prepMeanMask(pth_dat,pth_deriv);
 
-% 4. Create empty top level folder for all the subjects
-%======================================================
-for isub = 1:Nsubj
-    % Create subject's target folders
-    pth_isub_anat = fullfile(pth_out, ...
-        sprintf('sub-%s',participant_id{isub}),'anat');
-    if ~exist(pth_isub_anat,'dir'), mkdir(pth_isub_anat); end
-    fn_emptyT1w = fullfile( pth_isub_anat , ...
-        sprintf('sub-%s_T1w.nii',participant_id{isub}) );
-    fid = fopen(fn_emptyT1w,'wb'); fwrite(fid,0,'uint8');
-end
+% % 4. Create empty top level folder for all the subjects
+% %======================================================
+% for isub = 1:Nsubj
+%     % Create subject's target folders
+%     pth_isub_anat = fullfile(pth_out, ...
+%         sprintf('sub-%s',participant_id{isub}),'anat');
+%     if ~exist(pth_isub_anat,'dir'), mkdir(pth_isub_anat); end
+%     fn_emptyT1w = fullfile( pth_isub_anat , ...
+%         sprintf('sub-%s_T1w.nii',participant_id{isub}) );
+%     fid = fopen(fn_emptyT1w,'wb'); 
+%     fwrite(fid,0,'uint8'); 
+%     fclose(fid);
+% end
 
 %% Deal with TW-smoothed individual subjects data
 if opt.ops(1)
