@@ -37,11 +37,11 @@ function [fn_out, fn_out_nii] = cp_BIDSify_main(pth_dat,pth_out,opt)
 %       3. gather mean and mask images
 % - then deal with the subjects images
 %       1. the warped images, q-maps and modulated tissue class images
-%          -> "SPM12_dartel" derivative
+%          -> "SPM8_dartel" derivative
 %       2. the tissue-weighted (GM & WM) smoothed q-maps
-%          -> "SPM12_TWsmooth" derivative
+%          -> "VBQ_TWsmooth" derivative
 %       3. the native space tissue class images
-%          -> "SPM12_preproc" derivative
+%          -> "SPM8_preproc" derivative
 %
 % STILL MISSING
 % - data licence
@@ -73,9 +73,9 @@ if ~exist(pth_out,'dir'), mkdir(pth_out); end
 pth_deriv = fullfile(pth_out,'derivatives');
 if ~exist(pth_deriv,'dir'), mkdir(pth_deriv); end
 % Specific derivative folders: 'dartel', 'TWsmooth' and 'preproc'
-pth_drv_TWsmooth = fullfile(pth_deriv,'TWsmoot');
-pth_drv_dartel = fullfile(pth_deriv,'SPM12_dartel');
-pth_drv_preproc = fullfile(pth_deriv,'SPM12_preproc');
+pth_drv_TWsmooth = fullfile(pth_deriv,'VBQ_TWsmooth');
+pth_drv_dartel = fullfile(pth_deriv,'SPM8_dartel');
+pth_drv_preproc = fullfile(pth_deriv,'SPM8_preproc');
 
 %% Deal with top level files
 % 1. Labels and regressors -> participants.tsv file
