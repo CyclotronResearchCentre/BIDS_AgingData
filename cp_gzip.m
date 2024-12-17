@@ -12,13 +12,24 @@ function fn_out = cp_gzip(fn_in, flag)
 % fn_in     : single file, list of files, or path to a folder where files
 %             will be selected to be gzipped
 % flag      : structure with some options
-%   .filt       : file filtering regular expression (see spm_select)
+%   .filt       : file filtering regular expression (Def. '^.*\.nii$')
+%                 (see spm_select)
 %   .rec        : act recursively (Def.) or not on folder
 %   .delOrig    : delete the original file(s) or not (Def.)
 % 
 % OUPTUT
 % 
 % fn_out    : file(s) that were gzipped
+% 
+% EXAMPLE
+% To gzip all nifti files in current folder and lower ones, not keeping the
+% original ones
+%   flag = struct(...
+%     'filt','^.*\.nii$',... % all .nii files
+%     'rec', true, ... % act recursively
+%     'delOrig', true) % delete originals
+%   pth_gzip = 'D:\ccc_DATA\qMRI_Ageing_MPM\BIDS_AgingData'
+%   cp_gzip(pth_gzip, flag)
 % 
 % NOTE:
 % When multiple files are passed, Gzip will put all the compressed files
@@ -35,7 +46,7 @@ function fn_out = cp_gzip(fn_in, flag)
 flag_ref = struct(...
     'filt','^.*\.nii$',... % all .nii files
     'rec', true, ... % act recursively
-    'delOrig', false);      % delete original file after gzipping 
+    'delOrig', false);  % do not delete original file after gzipping 
 pth_ref = '.'; % use local location by default
 
 if nargin<2, flag = flag_ref; end
