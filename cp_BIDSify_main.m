@@ -13,6 +13,8 @@ function [fn_out, fn_out_nii] = cp_BIDSify_main(pth_dat,pth_out,opt)
 %           * TW-smoothed warped quantiative maps
 %           * warped quantitative and tissue maps
 %           * subject space tissue maps
+%       .mask : apply a whole-brain mask on the quantitative maps (1,
+%               default) or not (0)
 %
 % OUTPUT
 %   fn_out     : whole list of files in the BIDS folder
@@ -23,12 +25,14 @@ function [fn_out, fn_out_nii] = cp_BIDSify_main(pth_dat,pth_out,opt)
 %   pth_out = 'D:\ccc_DATA\qMRI_Ageing_MPM\BIDS_AgingData'
 %   opt = struct( ...
 %       'gzip', true, ... % -> gzip all .nii files at the end
+%       'mask', true, ... % -> ICV-mask the qunatitive maps in MNI space
 %       'ops', [1 1 0]);  % -> deal with warped and TW-smoothed data but
 %                         %    not subject-space tissue maps
 %   fn_out = cp_BIDSify_main(pth_dat,pth_out, opt)
 %
 % REFERENCE
-% Callaghan et al. 2014, https://doi.org/10.1016/j.neurobiolaging.2014.02.008
+% Callaghan et al. 2014, 
+% https://doi.org/10.1016/j.neurobiolaging.2014.02.008
 %
 % PROCESS
 % - start top level duties
@@ -64,6 +68,7 @@ end
 if nargin<3
     opt = struct( ...
         'gzip', false, ...
+        'mask', true, ...
         'ops', [1 1 1]);
 end
 
@@ -163,6 +168,11 @@ if opt.ops(1)
 end
 
 %% Deal with warped individual subjects data: quantitative and tissue maps
+if opt.mask
+    % Pick up mask generated at top level
+    fn_mask = fn_MaskMean(end-1,:);
+    fl_imCalc.dtype = 16; % Force a float32 format as original data
+end
 if opt.ops(2)
     if ~exist(pth_drv_dartel,'dir'), mkdir(pth_drv_dartel); end
     % 1. Define the path to all the images:
@@ -214,7 +224,13 @@ if opt.ops(2)
                 fprintf('\nERROR. Could not find file :\n\t%s\n', ...
                     fn_isub_orig);
             else
-                copyfile(fn_isub_orig,fn_isub)
+                % Proceed with data copy, incl. masking
+                if opt.mask
+                    spm_imcalc(char(fn_isub_orig, fn_mask), fn_isub, ...
+                        'i1.*i2', fl_imCalc);
+                else
+                    copyfile(fn_isub_orig,fn_isub)
+                end
             end
         end
         
