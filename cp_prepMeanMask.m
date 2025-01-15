@@ -3,6 +3,10 @@ function fn_out = cp_prepMeanMask(pth_dat,pth_deriv)
 % - the "winner takes it all" mask images for GM and WM tissues
 % - the mean MTsat images (full of with different masks applied)
 % and create the corresponding description JSON files.
+% then it should create a binary intra-cranial volume mask.
+% 
+% The latter is derived from one of the masked mean MTsat images and will
+% be useful to ICV-mask the warped quantitative maps.
 % 
 % FORMAT
 %   fn_out = cp_prepMeanMask(pth_dat,pth_deriv)
@@ -19,7 +23,8 @@ function fn_out = cp_prepMeanMask(pth_dat,pth_deriv)
 % Written by C. Phillips.
 % Cyclotron Research Centre, University of Liege, Belgium
 
-% Deal with mask images, in the top data folder, and name them
+%% Deal with tissue mask images, in the top data folder, and name them
+% ====================================================================
 % - atlas-GM_space-MNI_mask.nii/.json
 % - atlas-WM_space-MNI_mask.nii/.json
 fn_GMmask_orig = fullfile(pth_dat,'WinnerTakesAllMask_GM.nii');
@@ -50,8 +55,9 @@ WMmask_json = struct( ...
     'ReferencesAndLinks', 'https://doi.org/10.1016%2Fj.neurobiolaging.2014.02.008');
 spm_save(fn_WMmask_json, WMmask_json, 'indent', '\t')
 
-% Deal with averaged map image(s), only some mean MTsat maps available but
-% with 3 different masks applied. :-(
+%% Deal with averaged map image(s) 
+% =================================
+% only some mean MTsat maps available but with 3 different masks/resolution
 fn_meanMTsat_orig1 = fullfile(pth_dat,'Average_MTsat_Maps', ...
     'AveragedMTMap_DARTEL.nii');
 fn_meanMTsat_orig2 = fullfile(pth_dat,'Average_MTsat_Maps', ...
@@ -106,12 +112,37 @@ meanMTsat_3_json = struct( ...
     'ReferencesAndLinks', 'https://doi.org/10.1016%2Fj.neurobiolaging.2014.02.008');
 spm_save(fn_meanMTsat_3_json, meanMTsat_3_json, 'indent', '\t')
 
-% Collect output
+%% Create the ICV mask
+% ====================
+% Use the fn_meanMTsat_3 image to define the ICV mask.
+% Apply a little bit of smoothing to avoid holes in the volumes (ventricles
+% with weird tiny or negative values) in the mask.
+fn_tmp = spm_file(fn_meanMTsat_3,'basename','tmp');
+spm_smooth(fn_meanMTsat_3,fn_tmp,1)
+fn_brMask = spm_file(fn_meanMTsat_3,'basename','atlas-wholebrain_space-MNI_res-high_mask');
+fl_imCalc = struct('dtype',2,'descrip','Whole brain population mask');
+spm_imcalc(fn_tmp, fn_brMask, 'i1~=0', fl_imCalc);
+delete(fn_tmp);
+
+% Add the corresponding JSON file
+fn_brMask_json = spm_file(fn_brMask,'ext','json');
+brMask_json = struct( ...
+    'Name', 'Whole brain population mask', ...
+    'Description', ['Whole brain population mask in MNI space, ' ...
+        'to brain extract the quantitative maps.'], ...
+    'DerivedFrom', 'atlas-MTsat_space-MNI_res-high_desc-mean.nii', ...
+    'Resolution', 'Matching the resulting image: [1 1 1] mm^3', ...
+    'ReferencesAndLinks', 'https://doi.org/10.1016%2Fj.neurobiolaging.2014.02.008');
+spm_save(fn_brMask_json, brMask_json, 'indent', '\t')
+
+%% Collect output
+% ===============
 fn_out = char( ...
     fn_GMmask, fn_GMmask_json, ...
     fn_WMmask, fn_WMmask_json, ...
     fn_meanMTsat_1, fn_meanMTsat_1_json, ...
     fn_meanMTsat_2, fn_meanMTsat_2_json, ...    
-    fn_meanMTsat_3, fn_meanMTsat_3_json ) ;
+    fn_meanMTsat_3, fn_meanMTsat_3_json, ...
+    fn_brMask, fn_brMask_json) ;
 
 end

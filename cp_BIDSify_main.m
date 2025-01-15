@@ -13,6 +13,8 @@ function [fn_out, fn_out_nii] = cp_BIDSify_main(pth_dat,pth_out,opt)
 %           * TW-smoothed warped quantiative maps
 %           * warped quantitative and tissue maps
 %           * subject space tissue maps
+%       .mask : apply a whole-brain mask on the quantitative maps (1,
+%               default) or not (0)
 %
 % OUTPUT
 %   fn_out     : whole list of files in the BIDS folder
@@ -23,12 +25,14 @@ function [fn_out, fn_out_nii] = cp_BIDSify_main(pth_dat,pth_out,opt)
 %   pth_out = 'D:\ccc_DATA\qMRI_Ageing_MPM\BIDS_AgingData'
 %   opt = struct( ...
 %       'gzip', true, ... % -> gzip all .nii files at the end
+%       'mask', true, ... % -> ICV-mask the qunatitive maps in MNI space
 %       'ops', [1 1 0]);  % -> deal with warped and TW-smoothed data but
 %                         %    not subject-space tissue maps
 %   fn_out = cp_BIDSify_main(pth_dat,pth_out, opt)
 %
 % REFERENCE
-% Callaghan et al. 2014, https://doi.org/10.1016/j.neurobiolaging.2014.02.008
+% Callaghan et al. 2014, 
+% https://doi.org/10.1016/j.neurobiolaging.2014.02.008
 %
 % PROCESS
 % - start top level duties
@@ -37,11 +41,11 @@ function [fn_out, fn_out_nii] = cp_BIDSify_main(pth_dat,pth_out,opt)
 %       3. gather mean and mask images
 % - then deal with the subjects images
 %       1. the warped images, q-maps and modulated tissue class images
-%          -> "SPM12_dartel" derivative
+%          -> "SPM8_dartel" derivative
 %       2. the tissue-weighted (GM & WM) smoothed q-maps
-%          -> "SPM12_TWsmooth" derivative
+%          -> "VBQ_TWsmooth" derivative
 %       3. the native space tissue class images
-%          -> "SPM12_preproc" derivative
+%          -> "SPM8_preproc" derivative
 %
 % STILL MISSING
 % - data licence
@@ -64,6 +68,7 @@ end
 if nargin<3
     opt = struct( ...
         'gzip', false, ...
+        'mask', true, ...
         'ops', [1 1 1]);
 end
 
@@ -73,9 +78,9 @@ if ~exist(pth_out,'dir'), mkdir(pth_out); end
 pth_deriv = fullfile(pth_out,'derivatives');
 if ~exist(pth_deriv,'dir'), mkdir(pth_deriv); end
 % Specific derivative folders: 'dartel', 'TWsmooth' and 'preproc'
-pth_drv_TWsmooth = fullfile(pth_deriv,'TWsmoot');
-pth_drv_dartel = fullfile(pth_deriv,'SPM12_dartel');
-pth_drv_preproc = fullfile(pth_deriv,'SPM12_preproc');
+pth_drv_TWsmooth = fullfile(pth_deriv,'VBQ_TWsmooth');
+pth_drv_dartel = fullfile(pth_deriv,'SPM8_dartel');
+pth_drv_preproc = fullfile(pth_deriv,'SPM8_preproc');
 
 %% Deal with top level files
 % 1. Labels and regressors -> participants.tsv file
@@ -91,6 +96,28 @@ fn_dataset_desription_json = cp_prepTopJSON(pth_out); %#ok<*NASGU>
 % 3. Arrange mean and mask images
 %================================
 fn_MaskMean = cp_prepMeanMask(pth_dat,pth_deriv);
+
+% % 4. Create empty top level folder for all the subjects
+% %======================================================
+% for isub = 1:Nsubj
+%     % Create subject's target folders
+%     pth_isub_anat = fullfile(pth_out, ...
+%         sprintf('sub-%s',participant_id{isub}),'anat');
+%     if ~exist(pth_isub_anat,'dir'), mkdir(pth_isub_anat); end
+%     fn_emptyT1w = fullfile( pth_isub_anat , ...
+%         sprintf('sub-%s_T1w.nii',participant_id{isub}) );
+%     fid = fopen(fn_emptyT1w,'wb'); 
+%     fwrite(fid,0,'uint8'); 
+%     fclose(fid);
+% end
+
+% 5. Create the .bidsignore files to pass validator
+%==============================================
+% It's a text file named '.bidsignore' with just this in body
+%   /participants.tsv
+%   /participants.json
+%   *_T1w.nii
+
 
 %% Deal with TW-smoothed individual subjects data
 if opt.ops(1)
@@ -141,6 +168,11 @@ if opt.ops(1)
 end
 
 %% Deal with warped individual subjects data: quantitative and tissue maps
+if opt.mask
+    % Pick up mask generated at top level
+    fn_mask = fn_MaskMean(end-1,:);
+    fl_imCalc.dtype = 16; % Force a float32 format as original data
+end
 if opt.ops(2)
     if ~exist(pth_drv_dartel,'dir'), mkdir(pth_drv_dartel); end
     % 1. Define the path to all the images:
@@ -192,7 +224,13 @@ if opt.ops(2)
                 fprintf('\nERROR. Could not find file :\n\t%s\n', ...
                     fn_isub_orig);
             else
-                copyfile(fn_isub_orig,fn_isub)
+                % Proceed with data copy, incl. masking
+                if opt.mask
+                    spm_imcalc(char(fn_isub_orig, fn_mask), fn_isub, ...
+                        'i1.*i2', fl_imCalc);
+                else
+                    copyfile(fn_isub_orig,fn_isub)
+                end
             end
         end
         
